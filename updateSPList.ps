@@ -1,0 +1,123 @@
+Measure-Command {
+
+Add-Type -Path "C:\powershell\Microsoft.SharePoint.Client.dll" # Google to find these files. They are part of a sharepoint plugin from MS
+
+Add-Type -Path "C:\powershell\Microsoft.SharePoint.Client.Runtime.dll"
+
+$siteURL = "https://yoursite/sharepoint" 
+
+$userId = "username" 
+
+$pwd = Read-Host -Prompt "Enter password" -AsSecureString 
+
+$context = New-Object Microsoft.SharePoint.Client.ClientContext($siteURL) 
+
+$context.Credentials = New-Object System.Net.NetworkCredential($userid, $pwd)
+
+$merged = Import-Csv C:\powershell\pain.csv # Grab CSV as source file to update SP list
+
+$lookupValueCollection = @()
+
+try{ 
+
+    $lists = $context.web.Lists 
+
+    $list = $lists.GetByTitle("App Name") # This is the field in the SP list
+
+    $listItems = $list.GetItems([Microsoft.SharePoint.Client.CamlQuery]::CreateAllItemsQuery()) 
+
+    $context.load($listItems) 
+
+    $context.executeQuery() 
+
+    foreach($listItem in $listItems) 
+
+    { 
+
+      
+
+   foreach ($row in $merged)
+
+   {
+
+       
+
+   if($listitem["Title"] -eq $row.app)
+
+{
+
+ 
+
+ 
+
+
+ #$bisoformat =  $row.BISO.Split([char]0x000A) #this is a row in the CSV file
+
+$bgroup = foreach ($i in  $row.'App Owner')
+
+{($i.split(','))[1]
+
+  
+
+ }
+
+foreach ($b in $bgroup)
+
+{
+
+
+ Write-Host  "Bgroup count is "$bgroup.Count
+
+  $spuser = $context.Web.EnsureUser($b)
+
+          
+
+  $context.load($spuser)
+
+  $context.executeQuery()
+
+ 
+
+   if($spuser -ne $null){
+
+    try{
+
+     $spuserValue = New-Object Microsoft.SharePoint.Client.FieldUserValue               
+
+     $spuserValue.LookupId = $spuser.id
+
+     $lookupValueCollection += $spuserValue
+
+write-host "Updating record " $row.app
+
+}
+
+catch{
+
+write-host "$($_.Exception.Message)" -foregroundcolor red $row.app
+
+$ErrorActionPreference = "Continue"
+
+}
+
+}
+
+}
+$userValueCollection = [Microsoft.SharePoint.Client.FieldUserValue[]]$lookupValueCollection
+$listItem["App_x0020_Owner"] = $userValueCollection # view SP webpage source to find encoded list name
+$listItem.Update()
+$lookupValueCollection = @()
+} 
+ }
+}    
+}  
+  catch{ 
+  $ErrorActionPreference = "Continue"
+    write-host "$($_.Exception.Message)" -foregroundcolor red  $row.Mnemonic
+
+    } 
+ 
+
+    }
+
+   
